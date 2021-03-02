@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<link rel="stylesheet" href="../css/public.css">
+<script  src="../js/jquery-3.5.1.min.js"></script>
+ <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+<title>Insert title here</title>
+<script src="../js/jquery.serializejson.min.js"></script>
+<script src="../js/memberreg.js"></script>
+<style>
+ .ziptr:hover{
+background: crimson;
+}
+.container h2{
+text-align: center;
+}
+#gg{
+border: 5px solid green;
+padding-top: 5px;
+}
+.form-horizontal{
+width: 1000px;
+}
+</style>
+<script>
+$(function(){
+	$('#clear').on('click',function(){
+		document.location.reload(true);
+	})
+	$('#id').keyup(function() {
+		if(!idcheck()){
+			return false;
+		}
+	})
+	$('#pwd').keyup(function(){
+		if(!passcheck()){
+			return false;
+		}
+	})
+	$('#pwd1').keyup(function(){
+		if(!passcheck()){
+			return false;
+		}
+	})
+	$('#name').keyup(function(){
+		if(!namecheck()){
+			return false;
+		}
+	})
+	$('#bir').on('change',function(){
+		if(!bircheck()){
+			return false;
+		}
+	})
+	$('#gend').on('change',function(){
+		if(!gendcheck()){
+			return false;
+		}
+	})
+	$('#hp').keyup(function(){
+		if(!hpcheck()){
+			return false;
+		}
+	})
+	$('#email').keyup(function(){
+		if(!emailcheck()){
+			return false;
+		}
+	})
+	$('#add2').keyup(function(){
+		if(!addcheck()){
+			return false;
+		}
+	})
+	
+	
+	
+	//아이디 중복검사
+	$('#idbtn').on('click',function(){
+		// 외부 스크립트에서 공백, 길이, 정규식 체크하여 
+		// 올바른 데이터로 검증될때만 ajax를 수행
+		if(!idcheck()){
+			return false;
+		} 
+		//idvalue = $('#id').val().trim();
+		$.ajax({
+			url :'/member/IdCheck',
+			type :'post',
+			data : {"id" : idvalue},
+			success : function(res){
+				$('#idspan1').html(res.sw).css('color','red');
+			},
+			error : function(xhr){
+				alert("상태 : " +xhr.status);
+			},
+			dataType : 'json'
+		})
+	})
+	// 우편번호 검색 - window
+	$('#btnzip').on('click',function(){
+		//jsp는 응답페이지가 아닌 요청페이지
+		window.open("zipSearch.jsp","_blank","width=400 height=500");
+	})
+	// 우편번호 검색 - modal
+	$('#dongbtn').on('click',function(){
+		dongvalue = $('#dong').val().trim();
+		
+		if(dongvalue.length < 1){
+			alert("동입력");
+			return false;
+		}
+		$.ajax({
+			url : "/member/DongCheck",
+			type : 'post',
+			data : {"dong" : dongvalue},
+			success : function(res){
+				code ="<table>";
+				code +="<tr><td>우편번호</td>";
+				code +="<td>주소</td>";
+				code +="<td>번지</td></tr>";
+					$.each(res,function(i,v){
+						code +="<tr class='ziptr'><td>" + v.zipcode +"</td>";
+						code +="<td>" +v.addr+ "</td>";
+						code +="<td> " + v.bunji +"</td></tr>";
+					})
+					code +="</table>";
+					$('#result').html(code);
+			},
+			error : function(xhr){
+				alert("상태 : " + xhr.status);
+			},
+			dataType :'json'
+		})
+	})
+	
+	//선택 
+	$('#result').on('click','.ziptr',function(){
+		zip = $('td:eq(0)',this).text();
+		add1 = $('td:eq(1)',this).text();
+		
+		$('#zip').val(zip);
+		$('#add1').val(add1);
+		
+		$('#myModal').modal('hide');
+	})
+
+	$('#joinbtn').on('click', function() {
+			// 입력한 모든 값을 가져온다.$('#id').val();
+			// 		console.log($('#joinform').serializeJSON());
+			// 		console.log($('#joinform').serializeArray());
+			// 		console.log("String"+$('#joinform').serialize());
+
+			//각 항목의 정규식과 길이, 공백 체크
+			//체크한 결과가 모두 올바르면 ajax를 실행한다.
+			//만약 하나라도 올바르지 않은 데이터가 포함되어 있다면 리턴한다.
+			if (!regcheck()) {
+				return false;
+			}$('#clear').hide();
+			$.ajax({
+				url : "/member/join.do",
+				data : $('#joinform').serializeJSON(),
+				type : 'post',
+				success : function(res) {
+					$('#joinspan').html(namevalue +"님" +res.sw).css('color','red');
+				},
+				error : function(xhr) {
+					alert("상태 :" + xhr.status)
+				},
+				dataType : 'json'
+			})
+		})
+	})
+</script>
+</head>
+<body>
+
+<div class="box1">
+	<!-- <h3>회원가입</h3>
+	아이디 중복검사<br>
+	우편번호검색 window.modal<br>
+	회원가입<br>
+	<br> -->
+	
+	
+	<div id="result1">
+	<div class="container">
+ 	 <h2>회원가입</h2>
+ 	 <fieldset id="gg">
+ 	 <br>
+ 	   		<form id="joinform" class="form-horizontal" >
+  		
+  			<div class="form-group">
+     		 <label class="control-label col-sm-2" for="id">아이디<br><span id="idspan"></label>
+      			<div class="col-sm-4">
+      	  		<input type="text" class="form-control" id="id" placeholder="아아디" name="mem_id">
+     			 </div>
+      	  		<input id="idbtn" class="btn btn-warning"type="button" value="중복검사">
+      	  		<span id="idspan1">
+   			 </div>
+   			 
+    		<div class="form-group">
+      		<label class="control-label col-sm-2" for="pwd">비밀번호<br><span id="pwdspan"></span></label>
+      			<div class="col-sm-4">          
+      			  <input type="password" class="form-control" id="pwd" placeholder="password" name="mem_pass">
+     		  </div>
+   	 		</div>
+   	 		
+    		<div class="form-group">
+      		<label class="control-label col-sm-2" for="pwd1">비밀번호 확인<br><span id="pwd1span"> </label>
+      			<div class="col-sm-4">          
+      			  <input type="password" class="form-control" id="pwd1" placeholder="password" name="mem_pass2">
+     		  </div>
+   	 		</div>
+  		
+  			<div class="form-group">
+     		 <label class="control-label col-sm-2" for="name">이름<br><span id="namespan"></label>
+      			<div class="col-sm-4">
+      	  		<input type="text" class="form-control" id="name" placeholder="name" name="mem_name">
+     			 </div>
+   			 </div>
+  		
+  			<div class="form-group">
+     		 <label class="control-label col-sm-2" for="bir">생년월일<br><span id="birspan"></label>
+      			<div class="col-sm-4">
+      	  		<input type="date" class="form-control" id="bir" placeholder="생년월일" name="mem_bir">
+     			 </div>
+   			 </div>
+   			 
+  		
+  			<div class="form-group">
+     		 <label class="control-label col-sm-2" for="gend">성별<br><span id="gendspan"></label>
+      			<div class="col-sm-4">
+					<select class="form-control" id="gend">
+					<option value="성별">성별</option>
+					<option value="남자">남자</option>
+					<option value="여자" >여자</option>
+					</select>
+     			 </div>
+   			 </div>
+   			 
+  			<div class="form-group">
+     		 <label class="control-label col-sm-2" for="hp">전화번호<br><span id="hpspan"></label>
+      			<div class="col-sm-4">
+      	  		<input type="text" class="form-control" id="hp" placeholder="전화번호" name="mem_hp">
+     			 </div>
+   			 </div>
+   			 
+   			 <div class="form-group">
+     		 <label class="control-label col-sm-2" for="email">Email:<br><span id="emailspan"></label>
+      			<div class="col-sm-4">
+      	  		<input type="email" class="form-control" id="email" placeholder="email" name="mem_mail">
+     			 </div>
+   			 </div>
+   			 
+   			 
+  			<div class="form-group">
+     		 <label class="control-label col-sm-2" for="zip">우편번호</label>
+      			<div class="col-sm-4">
+      	  		<input type="text" class="form-control" id="zip" placeholder="우편번호" name="mem_zip">
+     			 </div>
+     			<!--  <input id="btnzip" class="btn btn-success" type="button" value="번호검색window"> -->
+     			 <input id="modalzip" class="btn btn-success" type="button"  data-toggle="modal" data-target="#myModal" value="번호검색">
+   			 </div>
+   			 
+  			<div class="form-group">
+     		 <label class="control-label col-sm-2" for="add1">주소</label>
+      			<div class="col-sm-4">
+      	  		<input type="text" class="form-control" id="add1" placeholder="주소" name="mem_add1">
+     			 </div>
+   			 </div>
+   			 
+  			<div class="form-group">
+     		 <label class="control-label col-sm-2" for="add2">상세주소<br><span id="add2span"></label>
+      			<div class="col-sm-4">
+      	  		<input type="text" class="form-control" id="add2" placeholder="상세주소" name="mem_add2">
+     			 </div>
+   			 </div>
+   			 
+   	 
+   			<!-- <div class="form-group">        
+     	 		<div class="col-sm-offset-2 col-sm-10">
+        			<div class="checkbox">
+          				<label><input type="checkbox" name="remember"> Remember me</label>
+        			</div>
+     			 </div>
+    		</div> -->
+    
+	    	<div class="form-group">        
+	    	 <div class="col-sm-offset-2 col-sm-10">
+	     	   <button id="joinbtn" type="button" class="btn btn-info">전송</button>
+	     	   <button id="clear" type="reset" class="btn" >초기화</button>
+	     	   <span id="joinspan"></span>
+	    	  </div>
+	  	  </div>
+ 	 	</form>
+ 	 	</fieldset>
+ 	 	
+		</div>
+	</div>
+</div>
+
+<!-- Modal -->
+<div id="myModal" class="modal fade" role="dialog">
+  <div class="modal-dialog">
+
+    <!-- Modal content-->
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
+        <h4 class="modal-title">우편번호 찾기</h4>
+      </div>
+      <div class="modal-body">
+		<form>
+			<h2>우편번호 검색</h2>
+			찾고자 하는 동을 입력하세요 <br>
+			<input type="text" id="dong">
+			<input type="button" id="dongbtn" value="검색"><br><br>
+			<div id="result"></div>
+		</form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+
+
+</body>
+</html>
